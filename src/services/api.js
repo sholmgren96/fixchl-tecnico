@@ -1,4 +1,4 @@
-const BASE = 'https://fixchl-backend-production.up.railway.app/api'
+const BASE = 'https://fixchl-backend-production-bda3.up.railway.app/api'
 
 function getToken() {
   return localStorage.getItem('fixchl_token')
