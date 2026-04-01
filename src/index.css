@@ -3,11 +3,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --green-900: #4D2700;
-  --green-800: #C25A00;
-  --green-700: #D96800;
-  --green-500: #F07C1A;
-  --green-200: #FFCC94;
+  --green-900: #C25F00;
+  --green-800: #FE8315;
+  --green-700: #E57510;
+  --green-500: #FF9A3D;
+  --green-200: #FFCF9E;
   --green-100: #FFE8CC;
   --green-50:  #FFF5EB;
 
