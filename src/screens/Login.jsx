@@ -76,7 +76,7 @@ export default function Login() {
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: 'var(--bg)' }}>
 
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
-        <img src="/Logo_TecnicosYa_FB.png" alt="TecnicosYa" style={{ width: 96, height: 96, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }} />
+        <img src="/Logo_sin_fondo.png" alt="TecnicosYa" style={{ width: 96, height: 96, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }} />
         <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--gray-900)' }}>TecnicosYa</p>
         <p style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>Gestiona tus trabajos</p>
       </div>
