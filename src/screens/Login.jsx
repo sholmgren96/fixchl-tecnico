@@ -76,12 +76,8 @@ export default function Login() {
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: 'var(--bg)' }}>
 
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
-        <div style={{ width: 56, height: 56, background: 'var(--green-800)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </div>
-        <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--gray-900)' }}>FixChl Técnico</p>
+        <img src="/Logo_TecnicosYa_FB.png" alt="TecnicosYa" style={{ width: 96, height: 96, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }} />
+        <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--gray-900)' }}>TecnicosYa</p>
         <p style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>Gestiona tus trabajos</p>
       </div>
 
