@@ -49,8 +49,9 @@ export const api = {
   enviarMsg:   (id, contenido) => request('POST', `/chat/${id}/mensajes`, { contenido }),
 
   // Disponibilidad
-  getDisponibilidad:  ()       => request('GET',  '/disponibilidad'),
-  setDisponibilidad:  (bloques) => request('POST', '/disponibilidad', { bloques }),
+  getDisponibilidad:     ()             => request('GET',  '/disponibilidad'),
+  setDisponibilidad:     (bloques)      => request('POST', '/disponibilidad', { bloques }),
+  setDisponibilidadFecha:(fecha, horas) => request('POST', '/disponibilidad/fecha', { fecha, horas }),
 
   // Utils
   saveToken:  (token) => localStorage.setItem('fixchl_token', token),

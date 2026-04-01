@@ -1,191 +1,311 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../services/api'
 
-const DIAS = [
-  { dia: 1, nombre: 'Lunes' },
-  { dia: 2, nombre: 'Martes' },
-  { dia: 3, nombre: 'Miércoles' },
-  { dia: 4, nombre: 'Jueves' },
-  { dia: 5, nombre: 'Viernes' },
-  { dia: 6, nombre: 'Sábado' },
-  { dia: 0, nombre: 'Domingo' },
-]
+const HORAS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00',
+               '14:00','15:00','16:00','17:00','18:00','19:00','20:00']
 
-const HORAS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
+const DIAS_HDR   = ['L','M','X','J','V','S','D']
+const MESES_NOM  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+const MESES_CORTO= ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
 
-function generarProximas4Semanas(semana) {
-  const bloques = []
-  const hoy = new Date()
-  for (let semanaOffset = 0; semanaOffset < 4; semanaOffset++) {
-    for (const item of semana) {
-      if (!item.activo) continue
-      for (let diasOffset = 0; diasOffset < 7; diasOffset++) {
-        const d = new Date(hoy)
-        d.setDate(hoy.getDate() + semanaOffset * 7 + diasOffset + 1)
-        if (d.getDay() === item.dia) {
-          bloques.push({
-            fecha: d.toISOString().split('T')[0],
-            hora_inicio: item.hora_inicio,
-            hora_fin: item.hora_fin,
-          })
-          break
-        }
-      }
-    }
-  }
-  return bloques
+function fechaStr(y, m, d) {
+  return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+}
+
+function celdas(year, month) {
+  const firstDow  = new Date(year, month, 1).getDay()       // 0=Dom..6=Sáb
+  const totalDias = new Date(year, month + 1, 0).getDate()
+  const offset    = firstDow === 0 ? 6 : firstDow - 1       // Lun=0..Dom=6
+  const grid = []
+  for (let i = 0; i < offset; i++) grid.push(null)
+  for (let d = 1; d <= totalDias; d++) grid.push(d)
+  return grid
+}
+
+function formatLargo(f) {
+  const d = new Date(f + 'T12:00:00')
+  return `${DIAS_LARGO[d.getDay()]} ${d.getDate()} ${MESES_CORTO[d.getMonth()]}`
+}
+
+function esBloqueado(hora, bloqDia) {
+  if (!bloqDia?.length) return null
+  const h = parseInt(hora)
+  const b = bloqDia.find(b => {
+    const bs = parseInt(b.hora_inicio)
+    const be = parseInt(b.hora_fin)
+    return h >= bs && h < be
+  })
+  return b || null
 }
 
 export default function Agenda() {
-  const [semana, setSemana] = useState(
-    DIAS.map(d => ({ ...d, activo: false, hora_inicio: '09:00', hora_fin: '18:00' }))
-  )
-  const [guardando, setGuardando] = useState(false)
-  const [guardado, setGuardado]   = useState(false)
-  const [cargando, setCargando]   = useState(true)
+  const hoy    = new Date()
+  const hoyStr = hoy.toISOString().split('T')[0]
 
-  useEffect(() => {
-    api.getDisponibilidad().then(({ slots }) => {
-      if (!slots?.length) { setCargando(false); return }
-      // Inferir patrón semanal desde los slots guardados
-      const patron = {}
+  const [mes,       setMes]       = useState({ y: hoy.getFullYear(), m: hoy.getMonth() })
+  const [disp,      setDisp]      = useState({})   // { fecha: Set<hora> }
+  const [bloq,      setBloq]      = useState({})   // { fecha: [{hora_inicio,hora_fin,categoria,cliente_nombre}] }
+  const [fechaSel,  setFechaSel]  = useState(null)
+  const [horasSel,  setHorasSel]  = useState(new Set())
+  const [guardando, setGuardando] = useState(false)
+  const [cargando,  setCargando]  = useState(true)
+
+  const cargar = useCallback(async () => {
+    try {
+      const { slots = [], bloques_ocupados = [] } = await api.getDisponibilidad()
+
+      const dMap = {}
       for (const s of slots) {
-        const d = new Date(s.fecha + 'T12:00:00')
-        const diaSemana = d.getDay()
-        if (!patron[diaSemana]) {
-          patron[diaSemana] = { hora_inicio: s.hora_inicio, hora_fin: s.hora_fin }
-        }
+        const f = typeof s.fecha === 'string' ? s.fecha : s.fecha.toISOString().split('T')[0]
+        if (!dMap[f]) dMap[f] = new Set()
+        const hIni = parseInt(s.hora_inicio)
+        const hFin = parseInt(s.hora_fin)
+        for (let h = hIni; h < hFin; h++) dMap[f].add(`${String(h).padStart(2,'0')}:00`)
       }
-      setSemana(prev => prev.map(item => ({
-        ...item,
-        activo: !!patron[item.dia],
-        hora_inicio: patron[item.dia]?.hora_inicio || item.hora_inicio,
-        hora_fin:    patron[item.dia]?.hora_fin    || item.hora_fin,
-      })))
-      setCargando(false)
-    }).catch(() => setCargando(false))
+
+      const bMap = {}
+      for (const b of bloques_ocupados) {
+        const f = b.fecha
+        if (!bMap[f]) bMap[f] = []
+        bMap[f].push(b)
+      }
+
+      setDisp(dMap)
+      setBloq(bMap)
+    } catch (e) { console.error(e) }
+    finally { setCargando(false) }
   }, [])
 
-  const toggleDia = (dia) => {
-    setSemana(prev => prev.map(item =>
-      item.dia === dia ? { ...item, activo: !item.activo } : item
-    ))
-    setGuardado(false)
+  useEffect(() => { cargar() }, [cargar])
+
+  const selFecha = (f) => {
+    if (f < hoyStr) return
+    if (fechaSel === f) { setFechaSel(null); return }
+    setFechaSel(f)
+    setHorasSel(new Set(disp[f] || []))
   }
 
-  const updateHora = (dia, campo, valor) => {
-    setSemana(prev => prev.map(item =>
-      item.dia === dia ? { ...item, [campo]: valor } : item
-    ))
-    setGuardado(false)
+  const toggleHora = (hora) => {
+    setHorasSel(prev => {
+      const next = new Set(prev)
+      next.has(hora) ? next.delete(hora) : next.add(hora)
+      return next
+    })
   }
 
-  const handleGuardar = async () => {
+  const guardar = async () => {
+    if (!fechaSel) return
     setGuardando(true)
     try {
-      const bloques = generarProximas4Semanas(semana)
-      await api.setDisponibilidad(bloques)
-      setGuardado(true)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setGuardando(false)
-    }
+      await api.setDisponibilidadFecha(fechaSel, [...horasSel])
+      setDisp(prev => ({ ...prev, [fechaSel]: new Set(horasSel) }))
+      setFechaSel(null)
+    } catch (e) { console.error(e) }
+    finally { setGuardando(false) }
   }
 
-  const diasActivos = semana.filter(d => d.activo).length
+  const navMes = (d) => {
+    setFechaSel(null)
+    setMes(({ y, m }) => {
+      let nm = m + d, ny = y
+      if (nm > 11) { nm = 0; ny++ }
+      if (nm < 0)  { nm = 11; ny-- }
+      return { y: ny, m: nm }
+    })
+  }
+
+  const grid = celdas(mes.y, mes.m)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
       <div className="topbar">
         <div>
           <p className="topbar-title">Agenda</p>
-          <p className="topbar-sub">
-            {diasActivos > 0
-              ? `${diasActivos} día${diasActivos !== 1 ? 's' : ''} activo${diasActivos !== 1 ? 's' : ''} esta semana`
-              : 'Sin disponibilidad configurada'}
-          </p>
+          <p className="topbar-sub">Toca una fecha para configurar horarios</p>
         </div>
       </div>
 
-      <div className="screen" style={{ paddingTop: 12 }}>
+      <div className="screen" style={{ paddingTop: 0 }}>
 
-        <div style={{ padding: '0 12px 8px' }}>
-          <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.5 }}>
-            Activa los días en que estás disponible para recibir trabajos agendados. Los clientes verán estos horarios al elegir una fecha.
+        {/* ── Navegación de mes ── */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px 8px' }}>
+          <button
+            onClick={() => navMes(-1)}
+            style={{ width:32, height:32, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-700)" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <p style={{ fontSize:15, fontWeight:600, fontFamily:'var(--font-display)', color:'var(--gray-900)' }}>
+            {MESES_NOM[mes.m]} {mes.y}
           </p>
+          <button
+            onClick={() => navMes(1)}
+            style={{ width:32, height:32, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-700)" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
         </div>
 
+        {/* ── Cabecera días ── */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', padding:'0 8px 4px' }}>
+          {DIAS_HDR.map(d => (
+            <div key={d} style={{ textAlign:'center', fontSize:11, fontWeight:600, color:'var(--gray-500)', padding:'2px 0' }}>{d}</div>
+          ))}
+        </div>
+
+        {/* ── Grid días ── */}
         {cargando ? (
-          <div className="empty-state"><p>Cargando disponibilidad...</p></div>
+          <div className="empty-state" style={{ paddingTop:40 }}><p>Cargando...</p></div>
         ) : (
-          <>
-            {semana.map(item => (
-              <div key={item.dia} className="card" style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: item.activo ? 12 : 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: item.activo ? 'var(--gray-900)' : 'var(--gray-500)' }}>
-                    {item.nombre}
-                  </p>
-                  <button
-                    className={`toggle-btn ${item.activo ? 'on' : 'off'}`}
-                    onClick={() => toggleDia(item.dia)}
-                  />
-                </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:3, padding:'0 8px' }}>
+            {grid.map((dia, i) => {
+              if (!dia) return <div key={`e${i}`} />
 
-                {item.activo && (
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 4 }}>Desde</p>
-                      <select
-                        value={item.hora_inicio}
-                        onChange={e => updateHora(item.dia, 'hora_inicio', e.target.value)}
-                        style={{
-                          width: '100%', padding: '8px 10px', borderRadius: 8,
-                          border: '1px solid var(--border-md)', fontSize: 13,
-                          color: 'var(--gray-900)', background: 'var(--bg)',
-                          fontFamily: 'var(--font-body)',
-                        }}
-                      >
-                        {HORAS.map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 4 }}>Hasta</p>
-                      <select
-                        value={item.hora_fin}
-                        onChange={e => updateHora(item.dia, 'hora_fin', e.target.value)}
-                        style={{
-                          width: '100%', padding: '8px 10px', borderRadius: 8,
-                          border: '1px solid var(--border-md)', fontSize: 13,
-                          color: 'var(--gray-900)', background: 'var(--bg)',
-                          fontFamily: 'var(--font-body)',
-                        }}
-                      >
-                        {HORAS.filter(h => h > item.hora_inicio).map(h => <option key={h} value={h}>{h}</option>)}
-                      </select>
-                    </div>
+              const f        = fechaStr(mes.y, mes.m, dia)
+              const pasado   = f < hoyStr
+              const esHoy    = f === hoyStr
+              const esSel    = f === fechaSel
+              const tieneD   = (disp[f]?.size || 0) > 0
+              const tieneB   = (bloq[f]?.length || 0) > 0
+
+              return (
+                <button
+                  key={f}
+                  onClick={() => selFecha(f)}
+                  disabled={pasado}
+                  style={{
+                    position:'relative',
+                    height:50,
+                    borderRadius:10,
+                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3,
+                    border: esSel  ? '2px solid var(--green-800)'
+                          : esHoy  ? '2px solid var(--green-200)'
+                          : '2px solid transparent',
+                    background: esSel    ? 'var(--green-50)'
+                              : pasado   ? 'transparent'
+                              : 'var(--surface)',
+                    cursor: pasado ? 'default' : 'pointer',
+                    opacity: pasado ? 0.3 : 1,
+                    boxShadow: pasado ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+                    transition: 'background 0.12s, border-color 0.12s',
+                  }}
+                >
+                  <span style={{
+                    fontSize:13, lineHeight:1,
+                    fontWeight: esHoy || esSel ? 700 : 400,
+                    color: esSel ? 'var(--green-800)' : 'var(--gray-900)',
+                  }}>
+                    {dia}
+                  </span>
+                  {/* Indicadores */}
+                  <div style={{ display:'flex', gap:3, height:6, alignItems:'center' }}>
+                    {tieneD && (
+                      <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--green-800)' }} />
+                    )}
+                    {tieneB && (
+                      <div style={{ width:6, height:6, borderRadius:'50%', background:'#1558A0' }} />
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
-
-            <div style={{ padding: '8px 12px 24px' }}>
-              <button
-                className="btn-primary"
-                onClick={handleGuardar}
-                disabled={guardando}
-                style={{ opacity: guardando ? 0.7 : 1 }}
-              >
-                {guardando ? 'Guardando...' : guardado ? '✅ Guardado' : 'Guardar disponibilidad'}
-              </button>
-              {diasActivos > 0 && (
-                <p style={{ fontSize: 12, color: 'var(--gray-500)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
-                  Se generan horarios para las próximas 4 semanas
-                </p>
-              )}
-            </div>
-          </>
+                </button>
+              )
+            })}
+          </div>
         )}
+
+        {/* ── Leyenda ── */}
+        <div style={{ display:'flex', gap:16, padding:'10px 16px 6px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--green-800)' }} />
+            <span style={{ fontSize:11, color:'var(--gray-500)' }}>Disponible</span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:'#1558A0' }} />
+            <span style={{ fontSize:11, color:'var(--gray-500)' }}>Visita agendada</span>
+          </div>
+        </div>
+
+        {/* ── Panel de horas ── */}
+        {fechaSel && (
+          <div style={{ margin:'4px 12px 16px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:14, padding:14 }}>
+
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+              <p style={{ fontSize:14, fontWeight:600, fontFamily:'var(--font-display)', color:'var(--gray-900)' }}>
+                {formatLargo(fechaSel)}
+              </p>
+              <button
+                onClick={() => setFechaSel(null)}
+                style={{ width:24, height:24, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--gray-700)" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <p style={{ fontSize:11, color:'var(--gray-500)', marginBottom:10 }}>
+              Toca las horas en que estás disponible. Las horas con visita agendada no se pueden modificar.
+            </p>
+
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5, marginBottom:12 }}>
+              {HORAS.map(hora => {
+                const bloqueado  = esBloqueado(hora, bloq[fechaSel])
+                const seleccionado = horasSel.has(hora)
+
+                return (
+                  <button
+                    key={hora}
+                    onClick={() => !bloqueado && toggleHora(hora)}
+                    title={bloqueado ? `Visita: ${bloqueado.categoria || ''}` : ''}
+                    style={{
+                      padding:'9px 2px',
+                      borderRadius:8,
+                      border:`1.5px solid ${
+                        bloqueado    ? '#B3D4F5'
+                        : seleccionado ? 'var(--green-800)'
+                        : 'var(--border-md)'
+                      }`,
+                      background: bloqueado    ? '#EBF3FD'
+                                : seleccionado ? 'var(--green-50)'
+                                : 'white',
+                      color: bloqueado    ? '#1558A0'
+                           : seleccionado ? 'var(--green-800)'
+                           : 'var(--gray-700)',
+                      fontSize:12,
+                      fontWeight: seleccionado || bloqueado ? 600 : 400,
+                      cursor: bloqueado ? 'not-allowed' : 'pointer',
+                      textAlign:'center',
+                      lineHeight:1.2,
+                    }}
+                  >
+                    <div>{hora}</div>
+                    {bloqueado && (
+                      <div style={{ fontSize:8, marginTop:2, opacity:0.8 }}>Visita</div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              className="btn-primary"
+              onClick={guardar}
+              disabled={guardando}
+              style={{ opacity: guardando ? 0.7 : 1 }}
+            >
+              {guardando
+                ? 'Guardando...'
+                : horasSel.size === 0
+                  ? 'Guardar (sin horas = no disponible)'
+                  : `Guardar — ${horasSel.size} hora${horasSel.size !== 1 ? 's' : ''}`
+              }
+            </button>
+
+          </div>
+        )}
+
       </div>
     </div>
   )
