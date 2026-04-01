@@ -8,6 +8,7 @@ import Chats from './screens/Chats'
 import ChatScreen from './screens/ChatScreen'
 import Rendimiento from './screens/Rendimiento'
 import Perfil from './screens/Perfil'
+import Agenda from './screens/Agenda'
 
 const HIDE_NAV = [/^\/chats\/.+/]
 
@@ -26,6 +27,7 @@ function Shell() {
         <Route path="/solicitudes/:id" element={<DetalleJob />} />
         <Route path="/chats" element={<Chats />} />
         <Route path="/chats/:id" element={<ChatScreen />} />
+        <Route path="/agenda" element={<Agenda />} />
         <Route path="/rendimiento" element={<Rendimiento />} />
         <Route path="/perfil" element={<Perfil />} />
       </Routes>

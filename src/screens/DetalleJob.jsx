@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext'
 export default function DetalleJob() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { jobs, acceptJob, rejectJob } = useApp()
+  const { jobs, acceptJob, acceptJobWithDate, rejectJob } = useApp()
   const job = jobs.find(j => j.id === id)
 
   if (!job) {
@@ -21,8 +21,15 @@ export default function DetalleJob() {
     )
   }
 
-  const handleAccept = () => {
-    const chatId = acceptJob(job.id)
+  const tieneFechas = job.fechas_propuestas?.length > 0
+
+  const handleAccept = async () => {
+    const chatId = await acceptJob(job.id)
+    if (chatId) navigate(`/chats/${chatId}`)
+  }
+
+  const handleAcceptWithDate = async (fecha, hora) => {
+    const chatId = await acceptJobWithDate(job.id, fecha, hora)
     if (chatId) navigate(`/chats/${chatId}`)
   }
 
@@ -41,7 +48,9 @@ export default function DetalleJob() {
         <div className="topbar-right">
           {job.urgency === 'Hoy mismo'
             ? <span className="badge badge-red">{job.urgency}</span>
-            : <span className="badge badge-gray">{job.urgency}</span>
+            : job.urgency === 'Elegir fecha'
+              ? <span className="badge badge-amber">Con fecha</span>
+              : <span className="badge badge-gray">{job.urgency}</span>
           }
         </div>
       </div>
@@ -56,7 +65,7 @@ export default function DetalleJob() {
               </div>
               <div>
                 <p style={{ fontSize: 15, fontWeight: 500, fontFamily: 'var(--font-display)' }}>{job.clientName}</p>
-                <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>{job.commune} · {job.distance} de tu ubicación</p>
+                <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>{job.commune}</p>
               </div>
             </div>
 
@@ -74,19 +83,57 @@ export default function DetalleJob() {
             <div className="tag-row">
               <span className="pill pill-blue">{job.category}</span>
               <span className="pill">{job.urgency}</span>
-              <span className="pill">{job.distance}</span>
             </div>
           </div>
 
-          <div style={{ padding: '0 12px' }}>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              <button className="btn-primary" onClick={handleAccept}>Aceptar trabajo</button>
-              <button className="btn-danger" onClick={handleReject}>Rechazar</button>
+          {tieneFechas ? (
+            <div style={{ padding: '0 12px' }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--gray-700)', marginBottom: 8 }}>
+                📅 El cliente propone estas fechas — elige la que mejor te quede:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                {job.fechas_propuestas.map((f, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleAcceptWithDate(f.fecha, f.hora)}
+                    style={{
+                      background: 'var(--green-50)',
+                      border: '1px solid var(--green-200)',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      color: 'var(--green-800)',
+                      fontWeight: 500,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>{f.label}</span>
+                    <span style={{ fontSize: 12, background: 'var(--green-800)', color: '#fff', borderRadius: 6, padding: '3px 10px' }}>
+                      Aceptar
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button className="btn-danger" onClick={handleReject}>Rechazar solicitud</button>
+              <p style={{ fontSize: 12, color: 'var(--gray-500)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
+                Al aceptar, quedas conectado con el cliente vía chat.
+              </p>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--gray-500)', textAlign: 'center', lineHeight: 1.5 }}>
-              Al aceptar, quedas conectado con el cliente vía chat. El cliente no verá tu número.
-            </p>
-          </div>
+          ) : (
+            <div style={{ padding: '0 12px' }}>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                <button className="btn-primary" onClick={handleAccept}>Aceptar trabajo</button>
+                <button className="btn-danger" onClick={handleReject}>Rechazar</button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--gray-500)', textAlign: 'center', lineHeight: 1.5 }}>
+                Al aceptar, quedas conectado con el cliente vía chat. El cliente no verá tu número.
+              </p>
+            </div>
+          )}
 
         </div>
       </div>

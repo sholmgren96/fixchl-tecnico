@@ -28,28 +28,32 @@ export const api = {
   registro: (datos) => request('POST', '/auth/registro', datos),
 
   // Perfil
-  getPerfil:          () => request('GET',   '/tecnico/perfil'),
-  setDisponible:      (v) => request('PATCH', '/tecnico/disponible', { disponible: v }),
-  addComuna:          (c) => request('POST',  '/tecnico/comunas', { comuna: c }),
-  deleteComuna:       (c) => request('DELETE',`/tecnico/comunas/${encodeURIComponent(c)}`),
-  addCategoria:       (c) => request('POST',  '/tecnico/categorias', { categoria: c }),
-  deleteCategoria:    (c) => request('DELETE',`/tecnico/categorias/${encodeURIComponent(c)}`),
-  getEstadisticas:    () => request('GET',   '/tecnico/estadisticas'),
+  getPerfil:       () => request('GET',   '/tecnico/perfil'),
+  setDisponible:   (v) => request('PATCH', '/tecnico/disponible', { disponible: v }),
+  addComuna:       (c) => request('POST',  '/tecnico/comunas', { comuna: c }),
+  deleteComuna:    (c) => request('DELETE',`/tecnico/comunas/${encodeURIComponent(c)}`),
+  addCategoria:    (c) => request('POST',  '/tecnico/categorias', { categoria: c }),
+  deleteCategoria: (c) => request('DELETE',`/tecnico/categorias/${encodeURIComponent(c)}`),
+  getEstadisticas: () => request('GET',   '/tecnico/rendimiento'),
 
   // Trabajos
-  getDisponibles: () => request('GET', '/trabajos/disponibles'),
-  getMisTrabajos: () => request('GET', '/trabajos/mis-trabajos'),
-  aceptarTrabajo: (id) => request('POST', `/trabajos/${id}/aceptar`),
-  rechazarTrabajo:(id) => request('POST', `/trabajos/${id}/rechazar`),
-  completarTrabajo:(id)=> request('POST', `/trabajos/${id}/completar`),
+  getTrabajos:       ()              => request('GET',  '/trabajos'),
+  aceptarTrabajo:    (id)            => request('POST', `/trabajos/${id}/aceptar`),
+  aceptarConFecha:   (id, fecha, hora) => request('POST', `/trabajos/${id}/aceptar`, { fecha, hora }),
+  rechazarTrabajo:   (id)            => request('POST', `/trabajos/${id}/rechazar`),
+  completarTrabajo:  (id)            => request('POST', `/trabajos/${id}/completar`),
 
   // Chat
-  getChats:    () => request('GET', '/chat'),
+  getChats:    () => request('GET', '/chat/resumen'),
   getMensajes: (id) => request('GET', `/chat/${id}/mensajes`),
-  enviarMsg:   (id, contenido) => request('POST', `/chat/${id}/enviar`, { contenido }),
+  enviarMsg:   (id, contenido) => request('POST', `/chat/${id}/mensajes`, { contenido }),
+
+  // Disponibilidad
+  getDisponibilidad:  ()       => request('GET',  '/disponibilidad'),
+  setDisponibilidad:  (bloques) => request('POST', '/disponibilidad', { bloques }),
 
   // Utils
-  saveToken: (token) => localStorage.setItem('fixchl_token', token),
-  clearToken: () => localStorage.removeItem('fixchl_token'),
-  hasToken: () => !!localStorage.getItem('fixchl_token'),
+  saveToken:  (token) => localStorage.setItem('fixchl_token', token),
+  clearToken: ()      => localStorage.removeItem('fixchl_token'),
+  hasToken:   ()      => !!localStorage.getItem('fixchl_token'),
 }

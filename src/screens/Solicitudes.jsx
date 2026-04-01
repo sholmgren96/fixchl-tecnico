@@ -2,13 +2,15 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 
 function UrgencyBadge({ urgency }) {
-  if (urgency === 'Hoy mismo')
-    return <span className="badge badge-red">{urgency}</span>
+  if (urgency === 'Hoy mismo') return <span className="badge badge-red">{urgency}</span>
+  if (urgency === 'Elegir fecha') return <span className="badge badge-amber">Con fecha</span>
   return <span className="badge badge-gray">{urgency}</span>
 }
 
-function JobCard({ job, onAccept, onReject }) {
+function JobCard({ job, onAccept, onAcceptWithDate, onReject }) {
   const navigate = useNavigate()
+  const tieneFechas = job.fechas_propuestas?.length > 0
+
   return (
     <div className="card" style={{ cursor: 'pointer' }} onClick={() => navigate(`/solicitudes/${job.id}`)}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -16,7 +18,7 @@ function JobCard({ job, onAccept, onReject }) {
           <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--gray-900)', fontFamily: 'var(--font-display)' }}>
             {job.clientName}
           </p>
-          <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>{job.commune} · {job.distance}</p>
+          <p style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>{job.commune}</p>
         </div>
         <UrgencyBadge urgency={job.urgency} />
       </div>
@@ -27,24 +29,65 @@ function JobCard({ job, onAccept, onReject }) {
 
       <div className="tag-row" style={{ marginBottom: 12 }}>
         <span className="pill pill-blue">{job.category}</span>
-        <span className="pill">{job.distance}</span>
+        <span className="pill">{job.commune}</span>
         {job.urgency === 'Hoy mismo' && <span className="pill pill-red">Urgente</span>}
       </div>
 
-      <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
-        <button className="btn-primary" onClick={() => onAccept(job.id)}>Aceptar</button>
-        <button className="btn-danger" onClick={() => onReject(job.id)}>Rechazar</button>
-      </div>
+      {tieneFechas ? (
+        <div onClick={e => e.stopPropagation()}>
+          <p style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 6, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Fechas propuestas por el cliente
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+            {job.fechas_propuestas.map((f, i) => (
+              <button
+                key={i}
+                onClick={() => onAcceptWithDate(job.id, f.fecha, f.hora)}
+                style={{
+                  background: 'var(--green-50)',
+                  border: '1px solid var(--green-200)',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: 13,
+                  color: 'var(--green-800)',
+                  fontWeight: 500,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span>📅 {f.label}</span>
+                <span style={{ fontSize: 11, opacity: 0.7 }}>Aceptar →</span>
+              </button>
+            ))}
+          </div>
+          <button className="btn-danger" style={{ fontSize: 12, padding: '7px 0' }} onClick={() => onReject(job.id)}>
+            Rechazar solicitud
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+          <button className="btn-primary" onClick={() => onAccept(job.id)}>Aceptar</button>
+          <button className="btn-danger" onClick={() => onReject(job.id)}>Rechazar</button>
+        </div>
+      )}
     </div>
   )
 }
 
 export default function Solicitudes() {
-  const { jobs, acceptJob, rejectJob } = useApp()
+  const { jobs, acceptJob, acceptJobWithDate, rejectJob } = useApp()
   const navigate = useNavigate()
 
-  const handleAccept = (jobId) => {
-    const chatId = acceptJob(jobId)
+  const handleAccept = async (jobId) => {
+    const chatId = await acceptJob(jobId)
+    if (chatId) navigate(`/chats/${chatId}`)
+  }
+
+  const handleAcceptWithDate = async (jobId, fecha, hora) => {
+    const chatId = await acceptJobWithDate(jobId, fecha, hora)
     if (chatId) navigate(`/chats/${chatId}`)
   }
 
@@ -76,6 +119,7 @@ export default function Solicitudes() {
                 key={job.id}
                 job={job}
                 onAccept={handleAccept}
+                onAcceptWithDate={handleAcceptWithDate}
                 onReject={rejectJob}
               />
             ))}

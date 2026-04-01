@@ -3,6 +3,23 @@ import { api } from '../services/api.js'
 
 const AppCtx = createContext(null)
 
+const AVATAR_CLASSES = ['av-green', 'av-blue', 'av-amber', 'av-purple']
+
+function mapJob(j) {
+  return {
+    ...j,
+    id: String(j.id),
+    clientName:  j.cliente_nombre || 'Cliente',
+    category:    j.categoria,
+    description: j.descripcion,
+    urgency:     j.urgencia,
+    commune:     j.comuna,
+    initials:    (j.cliente_nombre || 'C').charAt(0).toUpperCase(),
+    avatarClass: AVATAR_CLASSES[j.id % AVATAR_CLASSES.length] || 'av-amber',
+    fechas_propuestas: j.fechas_propuestas || [],
+  }
+}
+
 export function AppProvider({ children }) {
   const [authed, setAuthed]   = useState(api.hasToken())
   const [profile, setProfile] = useState(null)
@@ -37,12 +54,18 @@ export function AppProvider({ children }) {
   }, [])
 
   const loadJobs = useCallback(async () => {
-    try { const d = await api.getDisponibles(); setJobs(d.trabajos || []) }
+    try {
+      const d = await api.getTrabajos()
+      setJobs((d.disponibles || []).map(mapJob))
+    }
     catch (e) { console.error(e) }
   }, [])
 
   const loadChats = useCallback(async () => {
-    try { const d = await api.getChats(); setChats(d.chats || []) }
+    try {
+      const d = await api.getChats()
+      setChats(d.trabajos || [])
+    }
     catch (e) { console.error(e) }
   }, [])
 
@@ -68,14 +91,23 @@ export function AppProvider({ children }) {
   const acceptJob = async (jobId) => {
     try {
       await api.aceptarTrabajo(jobId)
-      setJobs(p => p.filter(j => j.id !== jobId))
+      setJobs(p => p.filter(j => j.id !== String(jobId)))
+      await loadChats()
+      return String(jobId)
+    } catch (e) { setError(e.message); return null }
+  }
+
+  const acceptJobWithDate = async (jobId, fecha, hora) => {
+    try {
+      await api.aceptarConFecha(jobId, fecha, hora)
+      setJobs(p => p.filter(j => j.id !== String(jobId)))
       await loadChats()
       return String(jobId)
     } catch (e) { setError(e.message); return null }
   }
 
   const rejectJob = async (jobId) => {
-    try { await api.rechazarTrabajo(jobId); setJobs(p => p.filter(j => j.id !== jobId)) }
+    try { setJobs(p => p.filter(j => j.id !== String(jobId))) }
     catch (e) { console.error(e) }
   }
 
@@ -87,7 +119,7 @@ export function AppProvider({ children }) {
   const markComplete = async (chatId) => {
     try {
       await api.completarTrabajo(chatId)
-      setChats(p => p.map(c => c.id === chatId ? { ...c, estado: 'esperando_calificacion' } : c))
+      setChats(p => p.map(c => c.id === parseInt(chatId) ? { ...c, estado: 'esperando_calificacion' } : c))
     } catch (e) { console.error(e) }
   }
 
@@ -129,7 +161,7 @@ export function AppProvider({ children }) {
       error, setError,
       login, registro, logout,
       loadJobs, loadChats, loadPerfil, loadEstadisticas,
-      acceptJob, rejectJob, sendMessage, markComplete,
+      acceptJob, acceptJobWithDate, rejectJob, sendMessage, markComplete,
       toggleAvailable, addComuna, removeComuna, addCategoria,
       pendingCount, unreadCount,
     }}>
