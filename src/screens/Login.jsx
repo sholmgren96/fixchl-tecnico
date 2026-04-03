@@ -4,6 +4,30 @@ import { useApp } from '../context/AppContext'
 const CATEGORIAS = ['Electricista', 'Gasfiter', 'Servicio de aseo', 'Pintor', 'Maestro general', 'Otro']
 const COMUNAS    = ['Las Condes', 'Vitacura', 'Lo Barnechea', 'Chicureo']
 
+function validarRut(rut) {
+  const limpio = String(rut).replace(/[\.\-\s]/g, '').toUpperCase()
+  if (limpio.length < 2) return false
+  const cuerpo = limpio.slice(0, -1)
+  const dv     = limpio.slice(-1)
+  if (!/^\d+$/.test(cuerpo)) return false
+  let suma = 0, mul = 2
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += parseInt(cuerpo[i]) * mul
+    mul = mul === 7 ? 2 : mul + 1
+  }
+  const resto = 11 - (suma % 11)
+  const dvEsperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto)
+  return dv === dvEsperado
+}
+
+function formatRut(value) {
+  const limpio = value.replace(/[\.\-\s]/g, '').toUpperCase()
+  if (limpio.length <= 1) return limpio
+  const cuerpo = limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const dv = limpio.slice(-1)
+  return `${cuerpo}-${dv}`
+}
+
 function Campo({ label, children }) {
   return (
     <div>
@@ -53,6 +77,9 @@ export default function Login() {
     }
     if (pass.length < 6) {
       setMsg('La contraseña debe tener al menos 6 caracteres'); return
+    }
+    if (!validarRut(rut)) {
+      setMsg('RUT inválido. Verifica el dígito verificador'); return
     }
     if (categorias.length === 0) {
       setMsg('Selecciona al menos una categoría de servicio'); return
@@ -106,7 +133,20 @@ export default function Login() {
               </Campo>
 
               <Campo label="RUT">
-                <input value={rut} onChange={e => setRut(e.target.value)} placeholder="12.345.678-9" style={inputStyle}/>
+                <input
+                  value={rut}
+                  onChange={e => setRut(formatRut(e.target.value))}
+                  placeholder="12.345.678-9"
+                  style={{
+                    ...inputStyle,
+                    borderColor: rut.length > 3
+                      ? validarRut(rut) ? 'var(--green-800)' : '#F87171'
+                      : 'var(--border-md)'
+                  }}
+                />
+                {rut.length > 3 && !validarRut(rut) && (
+                  <p style={{ fontSize: 11, color: '#DC2626', marginTop: 4 }}>RUT inválido</p>
+                )}
               </Campo>
             </>
           )}
