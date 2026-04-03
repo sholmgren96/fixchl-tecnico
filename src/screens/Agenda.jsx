@@ -51,6 +51,7 @@ export default function Agenda() {
   const [horasSel,  setHorasSel]  = useState(new Set())
   const [guardando, setGuardando] = useState(false)
   const [cargando,  setCargando]  = useState(true)
+  const [errorMsg,  setErrorMsg]  = useState(null)
 
   const cargar = useCallback(async () => {
     try {
@@ -74,7 +75,10 @@ export default function Agenda() {
 
       setDisp(dMap)
       setBloq(bMap)
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      setErrorMsg('No se pudo cargar la agenda. Verifica tu conexión.')
+    }
     finally { setCargando(false) }
   }, [])
 
@@ -98,11 +102,15 @@ export default function Agenda() {
   const guardar = async () => {
     if (!fechaSel) return
     setGuardando(true)
+    setErrorMsg(null)
     try {
       await api.setDisponibilidadFecha(fechaSel, [...horasSel])
       setDisp(prev => ({ ...prev, [fechaSel]: new Set(horasSel) }))
       setFechaSel(null)
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      setErrorMsg('Error al guardar. Intenta de nuevo.')
+    }
     finally { setGuardando(false) }
   }
 
@@ -129,6 +137,13 @@ export default function Agenda() {
       </div>
 
       <div className="screen" style={{ paddingTop: 0 }}>
+
+        {errorMsg && (
+          <div style={{ margin:'8px 12px 0', padding:'10px 14px', background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span style={{ fontSize:13, color:'#991B1B' }}>{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'#991B1B', fontSize:16, lineHeight:1, padding:0 }}>×</button>
+          </div>
+        )}
 
         {/* ── Navegación de mes ── */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px 8px' }}>
