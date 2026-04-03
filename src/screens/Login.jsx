@@ -56,9 +56,34 @@ export default function Login() {
   const [rut, setRut]         = useState('')
   const [categorias, setCategorias] = useState([])
   const [comunas, setComunas] = useState([])
+  const [cedulaB64, setCedulaB64] = useState(null)
+  const [cedulaPreview, setCedulaPreview] = useState(null)
 
   const toggleItem = (list, setList, item) =>
     setList(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item])
+
+  const handleCedula = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      let w = img.width, h = img.height
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+        else       { w = Math.round(w * MAX / h); h = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      const b64 = canvas.toDataURL('image/jpeg', 0.75)
+      setCedulaB64(b64)
+      setCedulaPreview(b64)
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
+  }
 
   const handleLogin = async () => {
     if (!tel || !pass) { setMsg('Completa todos los campos'); return }
@@ -81,6 +106,9 @@ export default function Login() {
     if (!validarRut(rut)) {
       setMsg('RUT inválido. Verifica el dígito verificador'); return
     }
+    if (!cedulaB64) {
+      setMsg('Debes subir una foto de tu cédula de identidad'); return
+    }
     if (categorias.length === 0) {
       setMsg('Selecciona al menos una categoría de servicio'); return
     }
@@ -89,7 +117,7 @@ export default function Login() {
     }
     setLoading(true); setMsg('')
     try {
-      await registro({ nombre, rut, telefono: tel, password: pass, categoria: categorias[0], categorias, comunas })
+      await registro({ nombre, rut, telefono: tel, password: pass, categoria: categorias[0], categorias, comunas, cedula_foto: cedulaB64 })
     }
     catch (e) { setMsg(e.message) }
     finally { setLoading(false) }
@@ -166,6 +194,25 @@ export default function Login() {
                   style={{ ...inputStyle, borderColor: passConf && pass !== passConf ? '#F5B3B3' : 'var(--border-md)' }}/>
                 {passConf && pass !== passConf && (
                   <p style={{ fontSize: 11, color: 'var(--red-600)', marginTop: 4 }}>Las contraseñas no coinciden</p>
+                )}
+              </Campo>
+
+              <Campo label="Foto de cédula de identidad">
+                <p style={{ fontSize: 11, color: 'var(--gray-500)', marginBottom: 6 }}>
+                  Sube una foto clara del frente de tu cédula. Será revisada por nuestro equipo antes de activar tu cuenta.
+                </p>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+                  padding: '9px 12px', borderRadius: 8, border: `1.5px dashed ${cedulaB64 ? 'var(--green-800)' : 'var(--border-md)'}`,
+                  background: cedulaB64 ? 'var(--green-50)' : 'transparent', color: cedulaB64 ? 'var(--green-800)' : 'var(--gray-600)', fontSize: 13
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  {cedulaB64 ? 'Foto cargada' : 'Subir foto de cédula'}
+                  <input type="file" accept="image/*" capture="environment" onChange={handleCedula} style={{ display: 'none' }}/>
+                </label>
+                {cedulaPreview && (
+                  <img src={cedulaPreview} alt="Vista previa cédula"
+                    style={{ marginTop: 8, width: '100%', maxHeight: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }}/>
                 )}
               </Campo>
 

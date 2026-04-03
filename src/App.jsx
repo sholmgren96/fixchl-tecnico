@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import NavBar from './components/NavBar'
@@ -9,15 +10,38 @@ import ChatScreen from './screens/ChatScreen'
 import Rendimiento from './screens/Rendimiento'
 import Perfil from './screens/Perfil'
 import Agenda from './screens/Agenda'
+import PendienteVerificacion from './screens/PendienteVerificacion'
+import AdminLogin from './screens/admin/AdminLogin'
+import AdminShell from './screens/admin/AdminShell'
+import { adminAuth } from './services/adminApi'
 
 const HIDE_NAV = [/^\/chats\/.+/]
 
+function AdminApp() {
+  const [adminProfile, setAdminProfile] = useState(() => {
+    // Si hay token guardado, intentar parsear el nombre del JWT payload
+    try {
+      const token = adminAuth.getToken()
+      if (!token) return null
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.role === 'admin' ? { nombre: payload.nombre, email: payload.email } : null
+    } catch { return null }
+  })
+
+  if (!adminProfile) {
+    return <AdminLogin onLogin={(admin) => setAdminProfile(admin)} />
+  }
+  return <AdminShell admin={adminProfile} onLogout={() => setAdminProfile(null)} />
+}
+
 function Shell() {
-  const { authed } = useApp()
+  const { authed, profile } = useApp()
   const location = useLocation()
   const hideNav = HIDE_NAV.some(r => r.test(location.pathname))
 
+  if (location.pathname.startsWith('/admin')) return <AdminApp />
   if (!authed) return <Login />
+  if (profile && profile.estado !== 'activo') return <PendienteVerificacion />
 
   return (
     <div className="app-shell">
