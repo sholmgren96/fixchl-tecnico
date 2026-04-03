@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { api } from '../services/api'
 
 const CATEGORIAS = ['Electricista', 'Gasfiter', 'Servicio de aseo', 'Pintor', 'Maestro general', 'Otro']
 const COMUNAS    = ['Las Condes', 'Vitacura', 'Lo Barnechea', 'Chicureo']
@@ -58,9 +59,38 @@ export default function Login() {
   const [comunas, setComunas] = useState([])
   const [cedulaB64, setCedulaB64] = useState(null)
   const [cedulaPreview, setCedulaPreview] = useState(null)
+  const [otpEnviado, setOtpEnviado]       = useState(false)
+  const [otpCodigo, setOtpCodigo]         = useState('')
+  const [otpVerificado, setOtpVerificado] = useState(false)
+  const [otpLoading, setOtpLoading]       = useState(false)
+  const [otpMsg, setOtpMsg]               = useState('')
+  const [reenviarEn, setReenviarEn]       = useState(0)
 
   const toggleItem = (list, setList, item) =>
     setList(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item])
+
+  const enviarOtp = async () => {
+    if (!tel) { setOtpMsg('Ingresa tu teléfono primero'); return }
+    setOtpLoading(true); setOtpMsg('')
+    try {
+      await api.otpEnviar(tel)
+      setOtpEnviado(true)
+      setReenviarEn(60)
+      const t = setInterval(() => setReenviarEn(s => { if (s <= 1) { clearInterval(t); return 0 } return s - 1 }), 1000)
+    } catch (e) { setOtpMsg(e.message) }
+    finally { setOtpLoading(false) }
+  }
+
+  const verificarOtp = async () => {
+    if (otpCodigo.length !== 6) { setOtpMsg('Ingresa el código de 6 dígitos'); return }
+    setOtpLoading(true); setOtpMsg('')
+    try {
+      await api.otpVerificar(tel, otpCodigo)
+      setOtpVerificado(true)
+      setOtpMsg('')
+    } catch (e) { setOtpMsg(e.message) }
+    finally { setOtpLoading(false) }
+  }
 
   const handleCedula = (e) => {
     const file = e.target.files[0]
@@ -105,6 +135,9 @@ export default function Login() {
     }
     if (!validarRut(rut)) {
       setMsg('RUT inválido. Verifica el dígito verificador'); return
+    }
+    if (!otpVerificado) {
+      setMsg('Debes verificar tu número de teléfono'); return
     }
     if (!cedulaB64) {
       setMsg('Debes subir una foto de tu cédula de identidad'); return
@@ -180,7 +213,63 @@ export default function Login() {
           )}
 
           <Campo label="Teléfono">
-            <input value={tel} onChange={e => setTel(e.target.value)} placeholder="+56912345678" type="tel" style={inputStyle}/>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={tel}
+                onChange={e => { setTel(e.target.value); setOtpVerificado(false); setOtpEnviado(false); setOtpCodigo('') }}
+                placeholder="+56912345678"
+                type="tel"
+                style={{ ...inputStyle, flex: 1, borderColor: otpVerificado ? 'var(--green-800)' : 'var(--border-md)' }}
+                readOnly={otpVerificado}
+              />
+              {mode === 'registro' && !otpVerificado && (
+                <button
+                  onClick={enviarOtp}
+                  disabled={otpLoading || !tel || reenviarEn > 0}
+                  style={{
+                    padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: (otpLoading || !tel || reenviarEn > 0) ? 'var(--gray-200)' : 'var(--green-800)',
+                    color: (otpLoading || !tel || reenviarEn > 0) ? 'var(--gray-500)' : 'white',
+                    fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
+                  }}
+                >
+                  {otpLoading ? '...' : otpEnviado && reenviarEn > 0 ? `${reenviarEn}s` : otpEnviado ? 'Reenviar' : 'Enviar código'}
+                </button>
+              )}
+              {mode === 'registro' && otpVerificado && (
+                <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, color: 'var(--green-800)', fontSize: 18 }}>✓</div>
+              )}
+            </div>
+            {otpMsg && <p style={{ fontSize: 11, color: '#DC2626', marginTop: 4 }}>{otpMsg}</p>}
+            {mode === 'registro' && otpEnviado && !otpVerificado && (
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <input
+                  value={otpCodigo}
+                  onChange={e => setOtpCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Código de 6 dígitos"
+                  inputMode="numeric"
+                  style={{ ...inputStyle, flex: 1, letterSpacing: '0.15em', textAlign: 'center' }}
+                  onKeyDown={e => e.key === 'Enter' && verificarOtp()}
+                />
+                <button
+                  onClick={verificarOtp}
+                  disabled={otpLoading || otpCodigo.length !== 6}
+                  style={{
+                    padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    background: otpCodigo.length === 6 ? 'var(--green-800)' : 'var(--gray-200)',
+                    color: otpCodigo.length === 6 ? 'white' : 'var(--gray-500)',
+                    fontSize: 12, fontWeight: 600, flexShrink: 0,
+                  }}
+                >
+                  {otpLoading ? '...' : 'Verificar'}
+                </button>
+              </div>
+            )}
+            {mode === 'registro' && otpEnviado && !otpVerificado && (
+              <p style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 6 }}>
+                Revisa tu WhatsApp — enviamos el código al número ingresado
+              </p>
+            )}
           </Campo>
 
           <Campo label="Contraseña">

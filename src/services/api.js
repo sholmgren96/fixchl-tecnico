@@ -24,8 +24,10 @@ async function request(method, path, body) {
 
 export const api = {
   // Auth
-  login:    (telefono, password) => request('POST', '/auth/login', { telefono, password }),
-  registro: (datos) => request('POST', '/auth/registro', datos),
+  login:          (telefono, password) => request('POST', '/auth/login', { telefono, password }),
+  registro:       (datos)              => request('POST', '/auth/registro', datos),
+  otpEnviar:      (telefono)           => request('POST', '/auth/otp/enviar', { telefono }),
+  otpVerificar:   (telefono, codigo)   => request('POST', '/auth/otp/verificar', { telefono, codigo }),
 
   // Perfil
   getPerfil:       () => request('GET',   '/tecnico/perfil'),
