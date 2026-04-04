@@ -8,7 +8,7 @@ Instalable en celular como app nativa.
 - React + Vite
 - Tailwind CSS
 - Desplegada en Vercel desde repo sholmgren96/fixchl-tecnico
-- URL: https://fixchl-tecnico.vercel.app
+- URL: https://tecnicosya.vercel.app
 
 ## Conexión al backend
 - Archivo: src/services/api.js
