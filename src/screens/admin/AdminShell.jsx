@@ -27,7 +27,7 @@ export default function AdminShell({ admin, onLogout }) {
         padding: '28px 0', flexShrink: 0,
       }}>
         <div style={{ padding: '0 20px 28px', borderBottom: '1px solid #1F2937' }}>
-          <p style={{ fontSize: 16, fontWeight: 800, color: 'white', letterSpacing: '-0.3px' }}>TecnoYa</p>
+          <p style={{ fontSize: 16, fontWeight: 800, color: 'white', letterSpacing: '-0.3px' }}>TecnicosYa</p>
           <p style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>Panel Admin</p>
         </div>
 

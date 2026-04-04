@@ -17,7 +17,7 @@ export default function PendienteVerificacion() {
 
       <p style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.6, maxWidth: 320, marginBottom: rechazado ? 16 : 32 }}>
         {rechazado
-          ? 'Tu cuenta no pudo ser verificada. Si crees que es un error, contacta al equipo de TecnoYa.'
+          ? 'Tu cuenta no pudo ser verificada. Si crees que es un error, contacta al equipo de TecnicosYa.'
           : 'Estamos revisando tu cédula de identidad. Recibirás acceso a la app en un plazo de 24 horas hábiles.'}
       </p>
 

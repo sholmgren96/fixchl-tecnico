@@ -1,4 +1,4 @@
-# TecnoYa — PWA Técnico
+# TecnicosYa — PWA Técnico
 
 ## Descripción
 App web progresiva (PWA) para que los técnicos gestionen sus trabajos.

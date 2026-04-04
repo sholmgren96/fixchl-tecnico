@@ -32,7 +32,7 @@ export default function AdminLogin({ onLogin }) {
       }}>
         <div style={{ marginBottom: 28 }}>
           <p style={{ fontSize: 22, fontWeight: 800, color: '#111827', fontFamily: 'var(--font-display)' }}>
-            TecnoYa Admin
+            TecnicosYa Admin
           </p>
           <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>Panel de administración</p>
         </div>
@@ -44,7 +44,7 @@ export default function AdminLogin({ onLogin }) {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="admin@tecnoya.cl"
+              placeholder="admin@tecnicosya.cl"
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               style={inputStyle}
             />
