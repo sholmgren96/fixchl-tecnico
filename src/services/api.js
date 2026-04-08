@@ -26,8 +26,9 @@ export const api = {
   // Auth
   login:          (telefono, password) => request('POST', '/auth/login', { telefono, password }),
   registro:       (datos)              => request('POST', '/auth/registro', datos),
-  otpEnviar:      (telefono)           => request('POST', '/auth/otp/enviar', { telefono }),
-  otpVerificar:   (telefono, codigo)   => request('POST', '/auth/otp/verificar', { telefono, codigo }),
+  otpEnviar:        (telefono)                  => request('POST', '/auth/otp/enviar', { telefono }),
+  otpVerificar:     (telefono, codigo)          => request('POST', '/auth/otp/verificar', { telefono, codigo }),
+  recuperarPass:    (telefono, nueva_password)  => request('POST', '/auth/recuperar', { telefono, nueva_password }),
 
   // Perfil
   getPerfil:       () => request('GET',   '/tecnico/perfil'),
