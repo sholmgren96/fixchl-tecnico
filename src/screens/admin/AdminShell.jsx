@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react'
 import { adminApi, adminAuth } from '../../services/adminApi'
 import TecnicosPendientes from './TecnicosPendientes'
 import TecnicosLista from './TecnicosLista'
+import Dashboard from './Dashboard'
+import ServiciosLista from './ServiciosLista'
 
 const NAV = [
+  { id: 'dashboard',  label: 'Dashboard',    icon: '📊' },
   { id: 'pendientes', label: 'Verificación', icon: '⏳' },
   { id: 'tecnicos',   label: 'Técnicos',     icon: '👷' },
+  { id: 'servicios',  label: 'Servicios',    icon: '🔧' },
 ]
 
 export default function AdminShell({ admin, onLogout }) {
-  const [seccion, setSeccion]         = useState('pendientes')
+  const [seccion, setSeccion]         = useState('dashboard')
   const [pendientesCount, setPendientesCount] = useState(null)
 
   useEffect(() => {
@@ -77,8 +81,10 @@ export default function AdminShell({ admin, onLogout }) {
 
       {/* Contenido */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
+        {seccion === 'dashboard'  && <Dashboard />}
         {seccion === 'pendientes' && <TecnicosPendientes />}
         {seccion === 'tecnicos'   && <TecnicosLista />}
+        {seccion === 'servicios'  && <ServiciosLista />}
       </main>
 
     </div>

@@ -38,4 +38,18 @@ export const adminApi = {
   rechazar:     (id, razon)  => request('POST', `/tecnicos/${id}/rechazar`, { razon }),
   suspender:    (id)         => request('POST', `/tecnicos/${id}/suspender`),
   reactivar:    (id)         => request('POST', `/tecnicos/${id}/reactivar`),
+
+  getStats: () => request('GET', '/stats'),
+  getTrabajos: (params = {}) => {
+    const q = new URLSearchParams()
+    if (params.estado)    q.set('estado',    params.estado)
+    if (params.categoria) q.set('categoria', params.categoria)
+    if (params.desde)     q.set('desde',     params.desde)
+    if (params.hasta)     q.set('hasta',     params.hasta)
+    if (params.limit)     q.set('limit',     params.limit)
+    if (params.offset)    q.set('offset',    params.offset)
+    const qs = q.toString()
+    return request('GET', `/trabajos${qs ? '?' + qs : ''}`)
+  },
+  getTrabajoDetalle: (id) => request('GET', `/trabajos/${id}`),
 }
