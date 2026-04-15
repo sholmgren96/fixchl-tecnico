@@ -51,6 +51,10 @@ export const api = {
   getMensajes: (id) => request('GET', `/chat/${id}/mensajes`),
   enviarMsg:   (id, contenido) => request('POST', `/chat/${id}/mensajes`, { contenido }),
 
+  // Reportes
+  enviarReporte: (tipo, descripcion, trabajo_id = null) =>
+    request('POST', '/tecnico/reporte', { tipo, descripcion, trabajo_id }),
+
   // Disponibilidad
   getDisponibilidad:     ()             => request('GET',  '/disponibilidad'),
   setDisponibilidad:     (bloques)      => request('POST', '/disponibilidad', { bloques }),

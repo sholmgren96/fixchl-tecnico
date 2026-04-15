@@ -1,19 +1,29 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import HelpModal from '../components/HelpModal'
 
 const COMUNAS_STGO = ['Providencia','Las Condes','Ñuñoa','Santiago','Macul','La Florida','Vitacura','Maipú','Pudahuel','La Reina','Peñalolén','San Miguel']
 const CATEGORIAS   = ['Gasfitería','Electricidad','Pintura','Aseo','Otro']
 
 export default function Perfil() {
   const { profile, toggleAvailable, addComuna, removeComuna, addCategoria, logout } = useApp()
-  const [showAddComuna, setShowAddComuna]     = useState(false)
+  const [showAddComuna,    setShowAddComuna]    = useState(false)
   const [showAddCategoria, setShowAddCategoria] = useState(false)
+  const [showHelp,         setShowHelp]         = useState(false)
 
   if (!profile) return <div style={{ display:'flex', flexDirection:'column', height:'100%' }}><div className="topbar"><p className="topbar-title">Mi perfil</p></div><div className="empty-state"><p>Cargando...</p></div></div>
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
-      <div className="topbar"><p className="topbar-title">Mi perfil</p></div>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      <div className="topbar">
+        <p className="topbar-title">Mi perfil</p>
+        <div className="topbar-right">
+          <button onClick={() => setShowHelp(true)} style={{ width:32, height:32, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-600)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+        </div>
+      </div>
       <div className="screen">
         <div style={{ paddingTop: 14 }}>
 
@@ -88,6 +98,25 @@ export default function Perfil() {
             ) : (
               <button className="btn-ghost" style={{ fontSize:13 }} onClick={() => setShowAddCategoria(true)}>+ Agregar categoría</button>
             )}
+          </div>
+
+          <p className="section-label">Soporte</p>
+          <div className="card" style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <button
+              onClick={() => setShowHelp(true)}
+              style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer', padding:0, width:'100%' }}
+            >
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ width:34, height:34, borderRadius:10, background:'var(--green-50)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-800)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div style={{ textAlign:'left' }}>
+                  <p style={{ fontSize:13, fontWeight:500, color:'var(--gray-900)' }}>Centro de ayuda</p>
+                  <p style={{ fontSize:11, color:'var(--gray-500)', marginTop:1 }}>Preguntas frecuentes y reportes</p>
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
 
           <div style={{ padding:'14px 12px 24px' }}>

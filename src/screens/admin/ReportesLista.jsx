@@ -4,10 +4,21 @@ import { adminApi } from '../../services/adminApi'
 const ESTADOS = ['todos', 'pendiente', 'revisado', 'resuelto']
 
 const TIPO_LABEL = {
+  // Cliente (chatbot)
   no_llego:         'El técnico no llegó',
   mal_servicio:     'Problema con el trabajo',
   cancelar_trabajo: 'Cancelar trabajo activo',
+  // Técnico (app)
+  problema_cliente: 'Problema con un cliente',
+  no_puedo_asistir: 'No puede ir al trabajo',
+  error_app:        'Error en la aplicación',
+  // Común
   otro:             'Otra consulta o reclamo',
+}
+
+const ORIGEN_STYLE = {
+  cliente:  { background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', label: 'Cliente WA' },
+  tecnico:  { background: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE', label: 'Técnico App' },
 }
 
 const ESTADO_STYLE = {
@@ -115,11 +126,16 @@ export default function ReportesLista() {
                       {r.estado}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6B7280' }}>
-                    <span>📱 {r.cliente_wa}</span>
-                    {r.trabajo_id && <span>Trabajo #{r.trabajo_id}</span>}
-                    {r.categoria  && <span>{r.categoria} · {r.comuna}</span>}
-                    <span>{formatFecha(r.created_at)}</span>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10, ...ORIGEN_STYLE[r.origen || 'cliente'] }}>
+                      {ORIGEN_STYLE[r.origen || 'cliente'].label}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#6B7280' }}>
+                      {r.origen === 'tecnico' ? `Técnico #${r.tecnico_id}` : `📱 ${r.cliente_wa}`}
+                    </span>
+                    {r.trabajo_id && <span style={{ fontSize: 12, color: '#6B7280' }}>· Trabajo #{r.trabajo_id}</span>}
+                    {r.categoria  && <span style={{ fontSize: 12, color: '#6B7280' }}>· {r.categoria} {r.comuna}</span>}
+                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{formatFecha(r.created_at)}</span>
                   </div>
                 </div>
                 <svg

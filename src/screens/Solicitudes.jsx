@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
+import HelpModal from '../components/HelpModal'
 
 function UrgencyBadge({ urgency }) {
   if (urgency === 'Hoy mismo') return <span className="badge badge-red">{urgency}</span>
@@ -80,6 +82,7 @@ function JobCard({ job, onAccept, onAcceptWithDate, onReject }) {
 export default function Solicitudes() {
   const { jobs, acceptJob, acceptJobWithDate, rejectJob } = useApp()
   const navigate = useNavigate()
+  const [showHelp, setShowHelp] = useState(false)
 
   const handleAccept = async (jobId) => {
     const chatId = await acceptJob(jobId)
@@ -93,6 +96,7 @@ export default function Solicitudes() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
       <div className="topbar">
         <div>
           <p className="topbar-title">Solicitudes</p>
@@ -100,6 +104,9 @@ export default function Solicitudes() {
         </div>
         <div className="topbar-right">
           {jobs.length > 0 && <span className="badge badge-green">{jobs.length} nuevas</span>}
+          <button onClick={() => setShowHelp(true)} style={{ width:32, height:32, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-600)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
         </div>
       </div>
 

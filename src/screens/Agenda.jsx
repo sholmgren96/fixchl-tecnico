@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../services/api'
+import HelpModal from '../components/HelpModal'
 
 const HORAS = ['07:00','08:00','09:00','10:00','11:00','12:00','13:00',
                '14:00','15:00','16:00','17:00','18:00','19:00','20:00']
@@ -52,6 +53,7 @@ export default function Agenda() {
   const [guardando, setGuardando] = useState(false)
   const [cargando,  setCargando]  = useState(true)
   const [errorMsg,  setErrorMsg]  = useState(null)
+  const [showHelp,  setShowHelp]  = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -128,11 +130,17 @@ export default function Agenda() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
 
       <div className="topbar">
         <div>
           <p className="topbar-title">Agenda</p>
           <p className="topbar-sub">Toca una fecha para configurar horarios</p>
+        </div>
+        <div className="topbar-right">
+          <button onClick={() => setShowHelp(true)} style={{ width:32, height:32, borderRadius:'50%', background:'var(--gray-100)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-600)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
         </div>
       </div>
 
