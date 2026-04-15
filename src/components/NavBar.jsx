@@ -59,10 +59,10 @@ const ITEMS = [
 export default function NavBar() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { pendingCount, unreadCount } = useApp()
+  const { pendingCount, reagendCount, unreadCount } = useApp()
 
   const badges = {
-    '/solicitudes': pendingCount,
+    '/solicitudes': pendingCount + (reagendCount || 0),
     '/chats': unreadCount,
   }
 

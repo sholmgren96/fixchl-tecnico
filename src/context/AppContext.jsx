@@ -23,10 +23,11 @@ function mapJob(j) {
 export function AppProvider({ children }) {
   const [authed, setAuthed]   = useState(api.hasToken())
   const [profile, setProfile] = useState(null)
-  const [jobs, setJobs]       = useState([])
-  const [chats, setChats]     = useState([])
-  const [history, setHistory] = useState([])
-  const [error, setError]     = useState(null)
+  const [jobs, setJobs]                   = useState([])
+  const [chats, setChats]                 = useState([])
+  const [reagendamientos, setReagendamientos] = useState([])
+  const [history, setHistory]             = useState([])
+  const [error, setError]                 = useState(null)
 
   const login = async (telefono, password) => {
     const data = await api.login(telefono, password)
@@ -57,6 +58,7 @@ export function AppProvider({ children }) {
     try {
       const d = await api.getTrabajos()
       setJobs((d.disponibles || []).map(mapJob))
+      setReagendamientos((d.reagendamientos || []).map(mapJob))
     }
     catch (e) { console.error(e) }
   }, [])
@@ -111,6 +113,21 @@ export function AppProvider({ children }) {
     catch (e) { console.error(e) }
   }
 
+  const confirmarReagendamiento = async (jobId) => {
+    try {
+      await api.confirmarReagendamiento(jobId)
+      setReagendamientos(p => p.filter(j => j.id !== String(jobId)))
+      await loadChats()
+    } catch (e) { setError(e.message) }
+  }
+
+  const rechazarReagendamiento = async (jobId, razon) => {
+    try {
+      await api.rechazarReagendamiento(jobId, razon)
+      setReagendamientos(p => p.filter(j => j.id !== String(jobId)))
+    } catch (e) { setError(e.message) }
+  }
+
   const sendMessage = async (chatId, text) => {
     try { await api.enviarMsg(chatId, text) }
     catch (e) { console.error(e) }
@@ -152,18 +169,21 @@ export function AppProvider({ children }) {
     } catch (e) { setError(e.message) }
   }
 
-  const pendingCount = jobs.length
-  const unreadCount  = chats.filter(c => c.no_leidos > 0).length
+  const pendingCount      = jobs.length
+  const reagendCount      = reagendamientos.length
+  const unreadCount       = chats.filter(c => c.no_leidos > 0).length
 
   return (
     <AppCtx.Provider value={{
-      authed, profile, jobs, chats, history,
+      authed, profile, jobs, chats, reagendamientos, history,
       error, setError,
       login, registro, logout,
       loadJobs, loadChats, loadPerfil, loadEstadisticas,
-      acceptJob, acceptJobWithDate, rejectJob, sendMessage, markComplete,
+      acceptJob, acceptJobWithDate, rejectJob,
+      confirmarReagendamiento, rechazarReagendamiento,
+      sendMessage, markComplete,
       toggleAvailable, addComuna, removeComuna, addCategoria,
-      pendingCount, unreadCount,
+      pendingCount, reagendCount, unreadCount,
     }}>
       {children}
     </AppCtx.Provider>

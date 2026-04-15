@@ -40,11 +40,13 @@ export const api = {
   getEstadisticas: () => request('GET',   '/tecnico/rendimiento'),
 
   // Trabajos
-  getTrabajos:       ()              => request('GET',  '/trabajos'),
-  aceptarTrabajo:    (id)            => request('POST', `/trabajos/${id}/aceptar`),
-  aceptarConFecha:   (id, fecha, hora) => request('POST', `/trabajos/${id}/aceptar`, { fecha, hora }),
-  rechazarTrabajo:   (id)            => request('POST', `/trabajos/${id}/rechazar`),
-  completarTrabajo:  (id)            => request('POST', `/trabajos/${id}/completar`),
+  getTrabajos:              ()                  => request('GET',  '/trabajos'),
+  aceptarTrabajo:           (id)                => request('POST', `/trabajos/${id}/aceptar`),
+  aceptarConFecha:          (id, fecha, hora)   => request('POST', `/trabajos/${id}/aceptar`, { fecha, hora }),
+  rechazarTrabajo:          (id)                => request('POST', `/trabajos/${id}/rechazar`),
+  completarTrabajo:         (id)                => request('POST', `/trabajos/${id}/completar`),
+  confirmarReagendamiento:  (id)                => request('POST', `/trabajos/${id}/confirmar-reagendamiento`),
+  rechazarReagendamiento:   (id, razon)         => request('POST', `/trabajos/${id}/rechazar-reagendamiento`, { razon }),
 
   // Chat
   getChats:    () => request('GET', '/chat/resumen'),
