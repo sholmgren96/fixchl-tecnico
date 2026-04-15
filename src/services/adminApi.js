@@ -52,4 +52,14 @@ export const adminApi = {
     return request('GET', `/trabajos${qs ? '?' + qs : ''}`)
   },
   getTrabajoDetalle: (id) => request('GET', `/trabajos/${id}`),
+
+  getReportes: (params = {}) => {
+    const q = new URLSearchParams()
+    if (params.estado) q.set('estado', params.estado)
+    if (params.limit)  q.set('limit',  params.limit)
+    if (params.offset) q.set('offset', params.offset)
+    const qs = q.toString()
+    return request('GET', `/reportes${qs ? '?' + qs : ''}`)
+  },
+  updateReporteEstado: (id, estado) => request('PATCH', `/reportes/${id}/estado`, { estado }),
 }

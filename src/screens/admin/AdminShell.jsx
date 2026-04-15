@@ -4,21 +4,27 @@ import TecnicosPendientes from './TecnicosPendientes'
 import TecnicosLista from './TecnicosLista'
 import Dashboard from './Dashboard'
 import ServiciosLista from './ServiciosLista'
+import ReportesLista from './ReportesLista'
 
 const NAV = [
   { id: 'dashboard',  label: 'Dashboard',    icon: '📊' },
   { id: 'pendientes', label: 'Verificación', icon: '⏳' },
   { id: 'tecnicos',   label: 'Técnicos',     icon: '👷' },
   { id: 'servicios',  label: 'Servicios',    icon: '🔧' },
+  { id: 'reportes',   label: 'Reportes',     icon: '🚨' },
 ]
 
 export default function AdminShell({ admin, onLogout }) {
-  const [seccion, setSeccion]         = useState('dashboard')
+  const [seccion, setSeccion]               = useState('dashboard')
   const [pendientesCount, setPendientesCount] = useState(null)
+  const [reportesCount,   setReportesCount]   = useState(null)
 
   useEffect(() => {
     adminApi.getTecnicosPendientes()
       .then(d => setPendientesCount(d.tecnicos.length))
+      .catch(() => {})
+    adminApi.getReportes({ estado: 'pendiente', limit: 1 })
+      .then(d => setReportesCount(d.total))
       .catch(() => {})
   }, [seccion])
 
@@ -58,6 +64,11 @@ export default function AdminShell({ admin, onLogout }) {
                     {pendientesCount}
                   </span>
                 )}
+                {item.id === 'reportes' && reportesCount > 0 && (
+                  <span style={{ background: '#EF4444', color: 'white', borderRadius: 10, fontSize: 10, fontWeight: 700, padding: '1px 6px', minWidth: 18, textAlign: 'center' }}>
+                    {reportesCount}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -85,6 +96,7 @@ export default function AdminShell({ admin, onLogout }) {
         {seccion === 'pendientes' && <TecnicosPendientes />}
         {seccion === 'tecnicos'   && <TecnicosLista />}
         {seccion === 'servicios'  && <ServiciosLista />}
+        {seccion === 'reportes'   && <ReportesLista />}
       </main>
 
     </div>
