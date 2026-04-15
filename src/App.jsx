@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import NavBar from './components/NavBar'
+import InstallPrompt from './components/InstallPrompt'
 import Login from './screens/Login'
 import Solicitudes from './screens/Solicitudes'
 import DetalleJob from './screens/DetalleJob'
@@ -56,6 +57,7 @@ function Shell() {
         <Route path="/perfil" element={<Perfil />} />
       </Routes>
       {!hideNav && <NavBar />}
+      <InstallPrompt />
     </div>
   )
 }

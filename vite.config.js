@@ -8,10 +8,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'FixChl Técnico',
-        short_name: 'FixChl',
-        description: 'Gestiona tus trabajos con FixChl',
-        theme_color: '#0A4F3F',
+        name: 'TecnicosYa',
+        short_name: 'TecnicosYa',
+        description: 'Gestiona tus trabajos con TecnicosYa',
+        theme_color: '#FE8315',
         background_color: '#F7F5F0',
         display: 'standalone',
         orientation: 'portrait',
