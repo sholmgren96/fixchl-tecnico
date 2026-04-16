@@ -38,6 +38,7 @@ export const adminApi = {
   rechazar:     (id, razon)  => request('POST', `/tecnicos/${id}/rechazar`, { razon }),
   suspender:    (id)         => request('POST', `/tecnicos/${id}/suspender`),
   reactivar:    (id)         => request('POST', `/tecnicos/${id}/reactivar`),
+  verificarSEC: (id)         => request('GET',  `/tecnicos/${id}/verificar-sec`),
 
   getStats: () => request('GET', '/stats'),
   getTrabajos: (params = {}) => {

@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 
+const CATS_SEC = ['Electricista', 'Gasfiter']
+
+const SEC_BADGE = {
+  vigente:       { label: 'SEC Vigente',      bg: '#D1FAE5', color: '#065F46' },
+  caducado:      { label: 'SEC Caducado',     bg: '#FEF3C7', color: '#92400E' },
+  no_registrado: { label: 'No en SEC',        bg: '#FEE2E2', color: '#991B1B' },
+  error:         { label: 'Error SEC',        bg: '#F3F4F6', color: '#6B7280' },
+}
+
 export default function TecnicosPendientes() {
-  const [tecnicos, setTecnicos] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [cedula, setCedula]     = useState(null)  // { id, nombre, foto }
-  const [razon, setRazon]       = useState('')
-  const [toast, setToast]       = useState('')
+  const [tecnicos, setTecnicos]   = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [cedula, setCedula]       = useState(null)  // { id, nombre, foto }
+  const [razon, setRazon]         = useState('')
+  const [toast, setToast]         = useState('')
+  const [secLoading, setSecLoading] = useState({})  // { [id]: true/false }
 
   const cargar = async () => {
     try {
@@ -21,11 +31,28 @@ export default function TecnicosPendientes() {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000) }
 
   const verCedula = async (t) => {
-    setCedula({ id: t.id, nombre: t.nombre, foto: null })
+    setCedula({ id: t.id, nombre: t.nombre, foto: null, sec_estado: t.sec_estado })
     try {
       const data = await adminApi.getCedula(t.id)
-      setCedula({ id: t.id, nombre: t.nombre, foto: data.cedula_foto })
+      setCedula(prev => ({ ...prev, foto: data.cedula_foto }))
     } catch { setCedula(prev => ({ ...prev, foto: 'error' })) }
+  }
+
+  const consultarSEC = async (t) => {
+    setSecLoading(prev => ({ ...prev, [t.id]: true }))
+    try {
+      const data = await adminApi.verificarSEC(t.id)
+      if (!data.aplica) {
+        showToast('Esta categoría no es certificada por el SEC')
+      } else {
+        setTecnicos(prev => prev.map(x => x.id === t.id ? { ...x, sec_estado: data.estado } : x))
+        if (cedula?.id === t.id) setCedula(prev => ({ ...prev, sec_estado: data.estado }))
+      }
+    } catch {
+      showToast('No se pudo contactar al SEC — intenta más tarde')
+    } finally {
+      setSecLoading(prev => ({ ...prev, [t.id]: false }))
+    }
   }
 
   const aprobar = async (id) => {
@@ -71,13 +98,37 @@ export default function TecnicosPendientes() {
                   <p style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{t.nombre}</p>
                   <p style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>RUT {t.rut}</p>
                 </div>
-                <span style={{ ...s.estadoBadge('pendiente') }}>Pendiente</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span style={s.estadoBadge('pendiente')}>Pendiente</span>
+                  {t.sec_estado && SEC_BADGE[t.sec_estado] && (
+                    <span style={{ padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                      background: SEC_BADGE[t.sec_estado].bg, color: SEC_BADGE[t.sec_estado].color }}>
+                      {SEC_BADGE[t.sec_estado].label}
+                    </span>
+                  )}
+                </div>
               </div>
               <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>Tel: {t.telefono}</p>
+              {t.categorias?.length > 0 && (
+                <p style={{ fontSize: 12, color: '#6B7280', marginBottom: 2 }}>
+                  {t.categorias.join(', ')}
+                </p>
+              )}
               <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 14 }}>
                 Registrado el {new Date(t.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
               </p>
-              <button style={s.btnPrimary} onClick={() => verCedula(t)}>Ver cédula y decidir</button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button style={{ ...s.btnPrimary, flex: 1 }} onClick={() => verCedula(t)}>Ver cédula y decidir</button>
+                {t.categorias?.some(c => CATS_SEC.includes(c)) && (
+                  <button
+                    style={{ ...s.btnSec, opacity: secLoading[t.id] ? 0.6 : 1 }}
+                    disabled={secLoading[t.id]}
+                    onClick={() => consultarSEC(t)}
+                  >
+                    {secLoading[t.id] ? 'Consultando...' : 'Consultar SEC'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -92,6 +143,16 @@ export default function TecnicosPendientes() {
               <button onClick={() => { setCedula(null); setRazon('') }} style={s.btnClose}>×</button>
             </div>
 
+            {/* Badge SEC en modal */}
+            {cedula.sec_estado && SEC_BADGE[cedula.sec_estado] && (
+              <div style={{ marginBottom: 14 }}>
+                <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                  background: SEC_BADGE[cedula.sec_estado].bg, color: SEC_BADGE[cedula.sec_estado].color }}>
+                  {SEC_BADGE[cedula.sec_estado].label}
+                </span>
+              </div>
+            )}
+
             {!cedula.foto ? (
               <div style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF', fontSize: 13 }}>Cargando foto...</div>
             ) : cedula.foto === 'error' ? (
@@ -105,11 +166,35 @@ export default function TecnicosPendientes() {
               <button style={{ ...s.btnAprobar, flex: 1 }} onClick={() => aprobar(cedula.id)}>
                 Aprobar
               </button>
-              <button style={{ ...s.btnRechazar, flex: 1 }} onClick={() => rechazar(cedula.id)}
-                disabled={false}>
+              <button style={{ ...s.btnRechazar, flex: 1 }} onClick={() => rechazar(cedula.id)}>
                 Rechazar
               </button>
             </div>
+
+            {/* Acciones SEC en modal */}
+            {(() => {
+              const t = tecnicos.find(x => x.id === cedula.id)
+              if (!t?.categorias?.some(c => CATS_SEC.includes(c))) return null
+              return (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button
+                    style={{ ...s.btnSec, flex: 1, opacity: secLoading[t.id] ? 0.6 : 1 }}
+                    disabled={secLoading[t.id]}
+                    onClick={() => consultarSEC(t)}
+                  >
+                    {secLoading[t.id] ? 'Consultando SEC...' : 'Consultar SEC'}
+                  </button>
+                  <a
+                    href="https://wlhttp.sec.cl/validadorInstaladores/sec/consulta.do"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ ...s.btnSec, flex: 1, textDecoration: 'none', textAlign: 'center' }}
+                  >
+                    Ver en SEC →
+                  </a>
+                </div>
+              )
+            })()}
 
             <textarea
               value={razon}
@@ -152,6 +237,7 @@ const s = {
   btnAprobar: { padding: '10px 0', borderRadius: 8, border: 'none', background: '#059669', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   btnRechazar: { padding: '10px 0', borderRadius: 8, border: 'none', background: '#DC2626', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   btnClose:   { width: 28, height: 28, borderRadius: '50%', border: 'none', background: '#F3F4F6', color: '#374151', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 },
+  btnSec:     { padding: '9px 12px', borderRadius: 8, border: '1px solid #D1D5DB', background: 'white', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
   estadoBadge: (estado) => ({
     padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
     background: estado === 'activo' ? '#D1FAE5' : estado === 'pendiente' ? '#FEF3C7' : estado === 'suspendido' ? '#FEE2E2' : '#F3F4F6',
